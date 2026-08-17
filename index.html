@@ -4,14 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FDF2EF">
-<title>Клаптик</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Клаптик">
+<title>Клаптик — нотатки</title>
+<meta name="description" content="Нотатки з емодзі, власними категоріями та списками.">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/favicon.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Клаптик">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Comfortaa:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -64,6 +65,11 @@ header{text-align:center;margin-bottom:22px}
   text-transform:lowercase;color:var(--ink)}
 .tagline{font-family:'Caveat',cursive;font-size:22px;color:var(--rose-deep);margin-top:-2px}
 
+.install{display:none;margin:12px auto 0;padding:9px 18px;border-radius:999px;
+  font-family:'Comfortaa',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.04em;
+  color:#fff;background:linear-gradient(130deg,#F3A6B9,#E0798F);
+  box-shadow:0 10px 20px -10px rgba(224,121,143,.85)}
+.install:active{transform:scale(.96)}
 .search{position:relative;margin-bottom:14px}
 .search input{width:100%;padding:13px 16px 13px 42px;border-radius:999px;border:1.5px solid var(--rose-mist);
   background:var(--paper-2);outline:none;font-size:14.5px;box-shadow:0 6px 16px -12px rgba(214,120,140,.6)}
@@ -253,6 +259,7 @@ textarea.f-text::placeholder{color:var(--ink-faint)}
     </svg>
     <div class="brand">клаптик</div>
     <div class="tagline">маленькі думки, великі списки</div>
+    <button class="install" id="installBtn">＋ встановити застосунок</button>
   </header>
 
   <div class="search">
@@ -589,7 +596,22 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){const m=$('#modals').lastElementChild;if(m)close(m)}
 });
 render();
-if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+
+/* ---- встановлення на телефон ---- */
+let deferredPrompt=null;
+addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e; $('#installBtn').style.display='block';
+});
+$('#installBtn').onclick=async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt(); await deferredPrompt.userChoice;
+  deferredPrompt=null; $('#installBtn').style.display='none';
+};
+addEventListener('appinstalled',()=>{$('#installBtn').style.display='none'});
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
 </script>
 </body>
 </html>
