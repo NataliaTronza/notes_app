@@ -1,6 +1,6 @@
 /* Піднімай версію нижче щоразу, коли міняється index.html,
    інакше телефон і далі показуватиме стару копію. */
-const CACHE_VERSION = "klaptyk-v1";
+const CACHE_VERSION = "klaptyk-v3";
 
 const CORE = [
   "./",
