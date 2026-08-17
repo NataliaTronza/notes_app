@@ -1,17 +1,16 @@
 /* Піднімай версію нижче щоразу, коли міняється index.html,
    інакше телефон і далі показуватиме стару копію. */
-const CACHE_VERSION = "klaptyk-v3";
+const CACHE_VERSION = "klaptyk-v4";
 
 const CORE = [
   "./",
   "./index.html",
-  "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-maskable-192.png",
-  "./icons/icon-maskable-512.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/favicon.png"
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-192-maskable.png",
+  "./icon-512-maskable.png",
+  "./favicon.png"
 ];
 
 self.addEventListener("install", e => {

@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#FDF2EF">
 <title>Клаптик — нотатки</title>
 <meta name="description" content="Нотатки з емодзі, власними категоріями та списками.">
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" href="./icons/favicon.png">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -256,6 +256,17 @@ textarea.f-text::placeholder{color:var(--ink-faint)}
 .theme .prev{width:26px;height:26px;border-radius:50%;flex:0 0 auto;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 .theme span{font-family:'Comfortaa',sans-serif;font-size:12.5px;font-weight:500;color:var(--ink)}
+.diag{margin-top:4px;padding:6px 14px;border-radius:16px;background:#fff;
+  border:1.5px solid var(--rose-mist);font-size:13px}
+.diag .row2{display:flex;align-items:flex-start;gap:9px;padding:8px 0;
+  border-bottom:1px solid var(--rose-mist)}
+.diag .row2:last-child{border-bottom:0}
+.diag .st{flex:0 0 auto;width:18px;text-align:center;font-weight:700}
+.diag .ok{color:#4FA689}
+.diag .no{color:#D96A85}
+.diag .wt{color:var(--ink-faint)}
+.diag .tx{flex:1;color:var(--ink-soft);line-height:1.45}
+.diag b{font-weight:700;color:var(--ink)}
 .about{margin-top:6px;padding:13px 15px;border-radius:16px;background:#fff;
   border:1.5px solid var(--rose-mist);font-size:13.5px;color:var(--ink-soft)}
 .about b{font-family:'Caveat',cursive;font-size:20px;color:var(--rose-deep);font-weight:600}
@@ -623,7 +634,7 @@ function hearts(x,y){
 }
 
 /* ============ themes ============ */
-const APP_VERSION='1.1';
+const APP_VERSION='1.2';
 const THEMES={
   rose:{name:'Пудрова',dot:'#E88AA0',vars:{
     '--paper':'#FDF2EF','--paper-2':'#FFF9F8','--card':'#FFFDFC',
@@ -666,6 +677,57 @@ function applyTheme(key){
 }
 applyTheme(S.theme||'rose');
 
+/* ============ діагностика встановлення ============ */
+async function runDiag(box){
+  const rows=[];
+  const add=(st,txt)=>rows.push(`<div class="row2"><span class="st ${st}">${st==='ok'?'✓':st==='no'?'✕':'•'}</span><span class="tx">${txt}</span></div>`);
+
+  const https=location.protocol==='https:'||location.hostname==='localhost';
+  add(https?'ok':'no', https
+    ? `відкрито як сайт (<b>${location.protocol.replace(':','')}</b>)`
+    : `відкрито як файл (<b>${location.protocol.replace(':','')}</b>) — з такого джерела браузер НЕ встановлює застосунок, лише зберігає посилання. Треба покласти файли на GitHub Pages і відкрити адресу https://…`);
+
+  // manifest
+  let man=null;
+  try{
+    const r=await fetch('manifest.webmanifest',{cache:'no-store'});
+    if(!r.ok)throw new Error(r.status);
+    man=await r.json();
+    add('ok','manifest знайдено');
+  }catch(e){
+    add('no','manifest.webmanifest не читається — переконайся, що файл лежить поруч з index.html');
+  }
+
+  // icons
+  if(man){
+    let bad=[];
+    for(const i of man.icons){
+      try{const r=await fetch(i.src,{cache:'no-store'});if(!r.ok)bad.push(i.src)}catch(e){bad.push(i.src)}
+    }
+    add(bad.length?'no':'ok', bad.length
+      ? `не знайдено іконки: <b>${bad.join(', ')}</b> — саме через це Chrome відмовляється встановлювати`
+      : `усі ${man.icons.length} іконки на місці`);
+  }
+
+  // service worker
+  if(!('serviceWorker' in navigator)){
+    add('no','браузер не підтримує service worker');
+  }else{
+    try{
+      const rs=await navigator.serviceWorker.getRegistrations();
+      add(rs.length?'ok':'no', rs.length
+        ? 'service worker зареєстровано'
+        : (https?'service worker ще не зареєстрований — перезавантаж сторінку':'service worker не працює з локального файлу'));
+    }catch(e){ add('no','service worker недоступний'); }
+  }
+
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(standalone)add('ok','застосунок уже запущено встановленим');
+  else if(deferredPrompt)add('ok','усе готово — кнопка «встановити» у шапці активна');
+
+  box.innerHTML=rows.join('');
+}
+
 /* ============ settings ============ */
 function settingsSheet(){
   const v=modal(`
@@ -693,7 +755,12 @@ function settingsSheet(){
         <div class="line"><span>нотаток</span><b>${S.notes.length}</b></div>
         <div class="line"><span>категорій</span><b>${S.categories.length}</b></div>
       </div>
+      <span class="label">чи встановиться</span>
+      <div class="diag" id="diag">
+        <div class="row2"><span class="st wt">…</span><span class="tx">перевіряю</span></div>
+      </div>
       <button class="add-item" id="refresh" style="margin-top:10px">↻ перевірити оновлення</button>`;
+    runDiag(b.querySelector('#diag'));
     b.querySelectorAll('[data-t]').forEach(x=>x.onclick=()=>{
       S.theme=x.dataset.t;save();applyTheme(S.theme);paint();
     });
@@ -732,7 +799,7 @@ $('#installBtn').onclick=async()=>{
 addEventListener('appinstalled',()=>{$('#installBtn').style.display='none'});
 
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
 </body>
